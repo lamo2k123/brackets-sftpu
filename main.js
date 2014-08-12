@@ -1,10 +1,3 @@
-/*!
- * Brackets Todo 0.5.3
- * Display all todo comments in current document or project.
- *
- * @author Mikael Jorhult
- * @license http://mikaeljorhult.mit-license.org MIT
- */
 define( function( require, exports, module ) {
 	'use strict';
 
@@ -13,6 +6,8 @@ define( function( require, exports, module ) {
     };
 
     var PreferencesManager  = brackets.getModule('preferences/PreferencesManager'),
+		PanelManager        = brackets.getModule('view/PanelManager'),
+		Resizer             = brackets.getModule('utils/Resizer'),
         Preferences         = PreferencesManager.getExtensionPrefs(Config.ns);
 
     Preferences.definePreference('active', 'boolean', false);
@@ -26,8 +21,6 @@ define( function( require, exports, module ) {
 		ProjectManager = brackets.getModule( 'project/ProjectManager' ),
 		EditorManager = brackets.getModule( 'editor/EditorManager' ),
 		DocumentManager = brackets.getModule( 'document/DocumentManager' ),
-		PanelManager = brackets.getModule( 'view/PanelManager' ),
-		Resizer = brackets.getModule( 'utils/Resizer' ),
 		AppInit = brackets.getModule( 'utils/AppInit' ),
 		FileUtils = brackets.getModule( 'file/FileUtils' ),
 		FileSystem = brackets.getModule( 'filesystem/FileSystem' ),
@@ -46,7 +39,7 @@ define( function( require, exports, module ) {
 //		preferences = PreferencesManager.getExtensionPrefs( 'bigeyex.bracketsSFTPUpload' ),
 
 		// Mustache templates.
-		todoPanelTemplate = require( 'text!html/panel.html' ),
+//		todoPanelTemplate = require( 'text!html/panel.html' ),
 		todoRowTemplate = require( 'text!html/row.html' ),
 
 		// Setup extension.
@@ -270,7 +263,9 @@ define( function( require, exports, module ) {
     var SFTPU = function() {
 
         console.log('HERE', Preferences.get('active'));
-        this.addButton();
+        this
+            .addButton()
+            .addPanel();
     };
 
     SFTPU.prototype.createButton = function() {
@@ -287,7 +282,8 @@ define( function( require, exports, module ) {
     SFTPU.prototype.eventsButton = function(e) {
         e && e.preventDefault();
 
-        e.target.classList.toggle('brackets-sftpu_active');
+        document.getElementById('brackets-sftpu').classList.toggle('brackets-sftpu_active');
+        Resizer.toggle(document.getElementById('brackets-sftpu-panel'));
 
         Preferences.set('active', !Preferences.get('active'));
 
@@ -305,23 +301,35 @@ define( function( require, exports, module ) {
         return this;
     };
 
+    SFTPU.prototype.addPanel = function() {
+		var $panel = $(Mustache.render(require('text!templates/panel.html'), {
+            i18n : Strings
+        }));
+
+        $panel.on('click', '.brackets-sftpu__closed', this.eventsButton.bind(this));
+
+        PanelManager.createBottomPanel(Config.ns, $panel, 200);
+        Preferences.get('active') && Resizer.show($panel);
+
+    };
+
 	// Register panel and setup event listeners.
 	AppInit.appReady( function() {
-
+/*
 		var panelHTML = Mustache.render( todoPanelTemplate, {
 				strings: Strings
-			} );
+			} );*/
 
 		// Create and cache todo panel.
-		PanelManager.createBottomPanel( 'bigeyex.bracketsSFTPUpload.panel', $( panelHTML ), 100 );
-		$todoPanel = $( '#brackets-sftp-upload' );
+//		PanelManager.createBottomPanel(Config.ns, $( panelHTML ), 100 );
+//		$todoPanel = $( '#brackets-sftp-upload' );
 
 		// Close panel when close button is clicked.
-		$todoPanel
+		/*$todoPanel
 			.on( 'click', '.close', function() {
 				enablePanel( false );
 			} );
-
+*/
 		// Setup listeners.
 		registerListeners();
 
